@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#101614">
+<title>Mitch Fit</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#101614; --card:#1a221f; --card2:#212b27; --line:#2e3b36;
+  --acc:#3ddc97; --acc-dim:#2a8f66; --txt:#e8efec; --mut:#93a49d;
+  --warn:#ffb84d; --bad:#ff7b6b; --r:14px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  padding-bottom:calc(76px + env(safe-area-inset-bottom));}
+h1{font-size:1.25rem;margin:0}
+h2{font-size:1.05rem;margin:18px 0 8px;color:var(--acc)}
+header{padding:calc(14px + env(safe-area-inset-top)) 16px 10px;position:sticky;top:0;
+  background:linear-gradient(var(--bg) 75%,transparent);z-index:5}
+header .sub{color:var(--mut);font-size:.8rem;margin-top:2px}
+.wrap{padding:0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px;margin-bottom:12px}
+.chip{display:inline-block;background:var(--card2);border:1px solid var(--line);
+  color:var(--acc);font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:99px;margin-right:6px}
+.mut{color:var(--mut);font-size:.85rem;line-height:1.45}
+button{font:inherit;border:none;border-radius:10px;cursor:pointer}
+.btn{background:var(--acc);color:#07130d;font-weight:700;padding:10px 16px}
+.small{font-size:.78rem}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#151d1a;
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:10}
+nav button{flex:1;background:none;color:var(--mut);padding:9px 0 7px;font-size:.68rem;
+  display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:0}
+nav button .ic{font-size:1.25rem}
+nav button.on{color:var(--acc)}
+.tab{display:none}.tab.on{display:block}
+.seg{display:flex;background:var(--card2);border-radius:12px;padding:4px;margin:4px 0 14px}
+.seg button{flex:1;background:none;color:var(--mut);padding:8px 0;font-weight:600;font-size:.85rem;border-radius:9px}
+.seg button.on{background:var(--acc);color:#07130d}
+.ex{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.ex-head{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;cursor:pointer}
+.ex-head b{font-size:.95rem}
+.ex-head .tgt{color:var(--acc);font-size:.78rem;font-weight:700;white-space:nowrap;margin-left:8px}
+.ex-body{display:none;padding:0 14px 14px;border-top:1px solid var(--line)}
+.ex.open .ex-body{display:block}
+canvas.anim{width:100%;max-width:340px;display:block;margin:10px auto 4px;
+  background:var(--card2);border-radius:12px}
+.startw{background:#243329;border:1px solid var(--acc-dim);border-radius:10px;
+  padding:8px 12px;font-size:.82rem;margin:8px 0;color:var(--txt)}
+.startw b{color:var(--acc)}
+.cues{margin:8px 0 4px;padding-left:0;list-style:none}
+.cues li{font-size:.85rem;margin-bottom:5px;line-height:1.35;padding-left:22px;position:relative}
+.cues li.do::before{content:"✓";color:var(--acc);position:absolute;left:0;font-weight:700}
+.cues li.no::before{content:"✗";color:var(--bad);position:absolute;left:0;font-weight:700}
+.cues li.no{color:#dcb9b3}
+a.yt{display:inline-block;color:var(--acc);font-size:.83rem;font-weight:600;text-decoration:none;
+  border:1px solid var(--acc-dim);padding:6px 12px;border-radius:99px;margin:6px 0 10px}
+.logrow{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.logrow input{width:76px;background:var(--card2);border:1px solid var(--line);color:var(--txt);
+  border-radius:9px;padding:9px;font:inherit;text-align:center}
+.setdots{margin-top:8px;font-size:.8rem;color:var(--mut)}
+.setdots span{display:inline-block;background:var(--acc-dim);color:#fff;border-radius:7px;
+  padding:3px 8px;margin:2px 4px 2px 0;font-weight:600}
+.last{color:var(--warn);font-size:.78rem;margin-top:6px}
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+td,th{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--acc);font-size:.75rem;text-transform:uppercase;letter-spacing:.04em}
+#timerBtn{position:fixed;right:14px;bottom:calc(84px + env(safe-area-inset-bottom));
+  background:var(--card2);border:1.5px solid var(--acc);color:var(--acc);font-weight:800;
+  border-radius:99px;padding:13px 18px;font-size:.95rem;z-index:9;box-shadow:0 4px 16px rgba(0,0,0,.45)}
+#timerBtn.run{background:var(--acc);color:#07130d}
+.zone{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-radius:10px;margin-bottom:6px;font-size:.85rem}
+.big{font-size:1.5rem;font-weight:800;color:var(--acc)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input.bwin{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:9px;font:inherit;width:90px;text-align:center}
+details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:0;margin-bottom:10px;overflow:hidden}
+details summary{padding:13px 14px;cursor:pointer;font-weight:600;font-size:.92rem;list-style:none;
+  display:flex;justify-content:space-between;align-items:center}
+details summary::after{content:"▸";color:var(--mut);transition:transform .15s}
+details[open] summary::after{transform:rotate(90deg)}
+details .inner{padding:0 14px 14px}
+.kcal{color:var(--acc);font-size:.78rem;font-weight:700;white-space:nowrap;margin-left:8px}
+.ing{margin:6px 0;padding-left:18px;font-size:.85rem;line-height:1.5;color:var(--txt)}
+.method{font-size:.83rem;color:var(--mut);line-height:1.45;border-left:2px solid var(--acc-dim);padding-left:10px;margin-top:8px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="hTitle">Mitch Fit</h1>
+  <div class="sub" id="hSub"></div>
+</header>
+
+<div class="wrap">
+
+<!-- TODAY -->
+<div class="tab on" id="tab-today">
+  <div id="todayCard"></div>
+  <div class="card">
+    <b>This week's focus</b>
+    <p class="mut" id="phaseNote"></p>
+  </div>
+  <div class="card">
+    <b>Progression rule</b>
+    <p class="mut">Hit the top of the rep range on all sets with clean form → add weight next time
+    (+2.5&nbsp;kg upper body, +5&nbsp;kg lower body). Work to ~2 reps shy of failure.</p>
+  </div>
+  <div class="card">
+    <b>Daily targets</b>
+    <p class="mut">~2,750 kcal · 130 g protein · 8–10k steps · 7–9 h sleep · 2.5–3 L water</p>
+  </div>
+</div>
+
+<!-- TRAIN -->
+<div class="tab" id="tab-train">
+  <div class="seg" id="woSeg">
+    <button data-wo="A" class="on">A · Lower</button>
+    <button data-wo="B">B · Upper</button>
+    <button data-wo="C">C · Full</button>
+  </div>
+  <p class="mut small" style="margin:0 2px 10px">Warm up first: 5 min easy bike/incline walk + 2 light
+  sets of the first lift. Rest 2–3 min on big lifts, 60–90 s on the rest. Tap an exercise for its
+  form demo. Starting weights are a first-session guess — adjust until the last 2 reps are hard but clean.</p>
+  <div id="exList"></div>
+</div>
+
+<!-- CARDIO -->
+<div class="tab" id="tab-cardio">
+  <div class="card">
+    <b>Sunday session — <span id="cardioLen"></span></b>
+    <p class="mut">Bike, brisk hike, or jog. Wear the chest strap. Stay conversational — if you
+    can't speak full sentences, ease off. Load the <b>Zone 2</b> workout on your watch and it
+    will guide you (Training → Workouts).</p>
+  </div>
+  <h2>Your heart-rate zones (max ≈ 194)</h2>
+  <div class="zone" style="background:#20302a"><span><b>Zone 1</b> · daily walks</span><b>97–116</b></div>
+  <div class="zone" style="background:#1f3d31;border:1px solid var(--acc-dim)"><span><b>Zone 2</b> · where cardio lives</span><b>116–136</b></div>
+  <div class="zone" style="background:#3a3524"><span><b>Zone 3</b> · comfortably hard</span><b>136–155</b></div>
+  <div class="zone" style="background:#402824"><span><b>Zone 4–5</b> · intervals only (wk 9+)</span><b>155+</b></div>
+  <h2>Progression</h2>
+  <table>
+    <tr><th>Weeks</th><th>Session</th></tr>
+    <tr><td>1–4</td><td>40–50 min Zone 2. Jog/walk intervals are fine and normal</td></tr>
+    <tr><td>5–8</td><td>60–75 min. Add hills or a real trail</td></tr>
+    <tr><td>9–12</td><td>75–90 min hike/ride. Optional: 1×/wk 4 × 3 min hard (Z4), 3 min easy between. Add a 5–8 kg pack on one weekday walk</td></tr>
+  </table>
+  <div style="height:12px"></div>
+  <details>
+    <summary>⚙️ Garmin one-time setup</summary>
+    <div class="inner mut">
+      <p>Garmin Connect → Device → User Profile → <b>Heart Rate Zones</b> → set by <b>%HRmax</b>
+      (max 194 to start). Pair the chest strap for all cardio — wrist HR lags.</p>
+      <p>Copy the 5 workout files to the watch via USB: drag them into
+      <b>GARMIN/NEWFILES</b>. They'll appear under Training → Workouts after a restart.</p>
+      <p>Watch <b>Resting HR</b> and <b>VO2max</b> trend over the 12 weeks — that's your engine growing.</p>
+    </div>
+  </details>
+</div>
+
+<!-- FOOD -->
+<div class="tab" id="tab-food">
+  <div class="card grid2" style="text-align:center">
+    <div><div class="big">2,750</div><div class="mut small">kcal / day</div></div>
+    <div><div class="big">130 g</div><div class="mut small">protein / day</div></div>
+    <div><div class="big">~80 g</div><div class="mut small">fat</div></div>
+    <div><div class="big">~390 g</div><div class="mut small">carbs</div></div>
+  </div>
+  <p class="mut small">Formula: <b>1 breakfast + 1 lunch + 1 dinner + 2 snacks ≈ 2,700–2,900 kcal</b>.
+  Mix and match freely. Each recipe is a single dish that keeps the house kitchen kosher (no meat +
+  dairy cooked together) — but combine meals across the day however you like.
+  If weekly-average weight hasn't risen ~0.5 kg after 4 weeks, add one more snack.</p>
+
+  <h2>Breakfasts</h2>
+  <details><summary>Big Oatmeal Bowl<span class="kcal">700 · 35 g P</span></summary><div class="inner">
+    <ul class="ing">
+      <li>80 g rolled oats</li><li>300 ml whole milk</li><li>170 g Greek yogurt</li>
+      <li>100 g berries (frozen fine)</li><li>1 tbsp honey · 1 tbsp chia</li>
+    </ul>
+    <div class="method">Simmer oats + milk 4–5 min. Off the heat, stir through yogurt.
+    Top with berries, honey, chia. 8 minutes total.</div>
+  </div></details>
+  <details><summary>Omelette + Avocado Toast<span class="kcal">680 · 36 g P</span></summary><div class="inner">
+    <ul class="ing">
+      <li>3 eggs · 30 g grated cheese</li><li>Handful spinach + ½ chopped pepper</li>
+      <li>2 slices sourdough/wholegrain (80 g)</li><li>½ avocado · squeeze of lemon, salt</li>
+    </ul>
+    <div class="method">Sauté veg 2 min, add whisked eggs + cheese, fold when just set.
+    Toast bread, smash avocado on top.</div>
+  </div></details>
+
+  <h2>Lunches</h2>
+  <details><summary>Chicken Rice Bowl<span class="kcal">750 · 50 g P</span></summary><div class="inner">
+    <ul class="ing">
+      <li>200 g chicken breast · 1 tbsp olive oil · paprika, garlic, salt</li>
+      <li>95 g rice (dry) ≈ 280 g cooked</li><li>200 g roast veg (pepper/zucchini/onion)</li>
+      <li>Sauce: 1 tbsp tahini + lemon + water</li>
+    </ul>
+    <div class="method">Batch tip: grill 3 breasts + roast a tray of veg + cook a pot of rice on
+    Sunday → 3 lunches ready. Assemble and drizzle.</div>
+  </div></details>
+  <details><summary>Tuna Salad Sandwich + Apple<span class="kcal">650 · 38 g P</span></summary><div class="inner">
+    <ul class="ing">
+      <li>2 × 95 g tins tuna, drained</li><li>1 tbsp mayo + 1 tsp mustard + diced pickle</li>
+      <li>2 slices wholegrain bread</li><li>Side salad + 1 tbsp olive oil · 1 apple</li>
+    </ul>
+    <div class="method">Mix, assemble, done — 5 minutes. Swap tuna for tinned salmon or sardines
+    whenever.</div>
+  </div></details>
+
+  <h2>Dinners</h2>
+  <details><summary>Beef Noodle Stir-fry<span class="kcal">720 · 40 g P</span></summary><div class="inner">
+    <ul class="ing">
+      <li>150 g beef strips</li><li>90 g dry noodles (egg or rice)</li>
+      <li>300 g stir-fry veg mix</li><li>2 tbsp soy · garlic · ginger · 1 tbsp oil</li>
+    </ul>
+    <div class="method">Boil noodles. Sear beef hard 2 min, remove. Stir-fry veg 3 min, return
+    beef, add noodles + soy/garlic/ginger, toss 1 min.</div>
+  </div></details>
+  <details><summary>Salmon Traybake<span class="kcal">800 · 45 g P</span></summary><div class="inner">
+    <ul class="ing">
+      <li>180 g salmon fillet</li><li>400 g baby potatoes, halved</li>
+      <li>200 g green beans</li><li>1 tbsp olive oil · lemon · dill</li>
+    </ul>
+    <div class="method">200 °C: potatoes + oil in for 20 min, then add salmon + beans for
+    12–14 min more. One tray, no thinking.</div>
+  </div></details>
+  <details><summary>Chicken Pasta Arrabbiata<span class="kcal">800 · 48 g P</span></summary><div class="inner">
+    <ul class="ing">
+      <li>150 g chicken breast, diced</li><li>100 g dry pasta</li>
+      <li>200 g passata · garlic · chilli flakes</li><li>1 tbsp olive oil · basil</li>
+    </ul>
+    <div class="method">Boil pasta. Brown chicken in oil, add garlic/chilli 30 s, add passata,
+    simmer 5 min, toss with pasta + a splash of pasta water.</div>
+  </div></details>
+
+  <h2>Snacks — pick 2 a day</h2>
+  <div class="card mut" style="font-size:.85rem;line-height:1.7">
+    Greek yogurt 170 g + 40 g granola — <b style="color:var(--acc)">300 · 20 P</b><br>
+    Cottage cheese 250 g + fruit — <b style="color:var(--acc)">300 · 30 P</b><br>
+    Banana + 2 tbsp peanut butter — <b style="color:var(--acc)">300 · 9 P</b><br>
+    40 g almonds + 3 dates — <b style="color:var(--acc)">330 · 8 P</b><br>
+    Shake: 1 scoop whey + 300 ml milk + banana — <b style="color:var(--acc)">400 · 35 P</b>
+  </div>
+  <p class="mut small">After lifting, put a carb + protein meal or the shake within ~2 h.
+  Protein anchors to rotate: eggs · Greek yogurt · cottage cheese · tinned fish · chicken · beef ·
+  lentils · chickpeas · tofu.</p>
+</div>
+
+<!-- PROGRESS -->
+<div class="tab" id="tab-prog">
+  <div class="card">
+    <b>Body weight</b>
+    <div class="logrow">
+      <input class="bwin" id="bwIn" type="number" step="0.1" placeholder="kg" inputmode="decimal">
+      <button class="btn" onclick="logBW()">Log</button>
+      <span class="mut small" id="bwLast"></span>
+    </div>
+    <canvas id="bwChart" width="640" height="160" style="width:100%;margin-top:10px"></canvas>
+    <p class="mut small">Weigh 2–3×/week, same time of day. Watch the weekly average, not single days.
+    Target: +0.25–0.5 kg/month.</p>
+  </div>
+  <div class="card">
+    <b>⌚ Garmin sync</b>
+    <p class="mut small" style="margin:6px 0 10px">Import activities recorded on your Fenix 6.
+    Strength workouts fill your lift log automatically (sets, reps, and any weights you entered
+    on the watch); runs, rides and hikes go into the activity log below.</p>
+    <div class="logrow">
+      <label class="btn" style="display:inline-block">Import .fit file(s)
+        <input type="file" id="fitIn" accept=".fit,.FIT" multiple style="display:none"></label>
+      <label class="btn" style="display:inline-block;background:var(--card2);color:var(--txt);border:1px solid var(--line)">Import CSV
+        <input type="file" id="csvIn" accept=".csv" style="display:none"></label>
+    </div>
+    <div id="syncMsg" class="mut small" style="margin-top:8px"></div>
+    <details style="margin-top:10px">
+      <summary class="small">How to export from Garmin</summary>
+      <div class="inner mut small">
+        <p><b>Single activity (.fit — best for gym sessions):</b> on your phone, open
+        <b>connect.garmin.com</b> in the browser (request desktop site) → the activity →
+        gear icon → <b>Export Original</b>. You get a .zip — tap it in Files to unzip,
+        then import the .fit here.</p>
+        <p><b>Many activities at once (CSV):</b> connect.garmin.com → Activities →
+        <b>Export CSV</b>, then import it here. CSV fills the activity log only (no per-set data).</p>
+        <p>Note: weights you type on the watch during the workout are included; weights edited
+        later in Garmin Connect are not part of the original file.</p>
+      </div>
+    </details>
+  </div>
+  <div class="card">
+    <b>Activity log</b>
+    <div class="mut small" id="wkSummary" style="margin:6px 0"></div>
+    <div id="actLog" class="mut small">No activities imported yet.</div>
+  </div>
+  <div class="card">
+    <b>Lift history</b>
+    <div id="liftHist" class="mut small" style="margin-top:6px">Log sets in the Train tab and your
+    best set per session shows here.</div>
+  </div>
+  <div class="card">
+    <b>12-week milestones</b>
+    <table>
+      <tr><th>Wk</th><th>Target</th></tr>
+      <tr><td>4</td><td>Form checked on all main lifts · 45 min Zone 2 · +0.5–1 kg</td></tr>
+      <tr><td>8</td><td>Squat ~0.75× BW · deadlift ~BW · resting HR trending down</td></tr>
+      <tr><td>12</td><td>Squat ~BW · deadlift ~1.2× BW · 3–5 chin-ups · comfortable 3–4 h day-hike</td></tr>
+    </table>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<button id="timerBtn" onclick="timerTap()">⏱ Rest</button>
+
+<nav>
+  <button data-tab="today" class="on"><span class="ic">☀️</span>Today</button>
+  <button data-tab="train"><span class="ic">🏋️</span>Train</button>
+  <button data-tab="cardio"><span class="ic">❤️</span>Cardio</button>
+  <button data-tab="food"><span class="ic">🍽️</span>Food</button>
+  <button data-tab="prog"><span class="ic">📈</span>Progress</button>
+</nav>
+
+<script>
+/* ================= PROGRAM ================= */
+const START = new Date(2026,6,6);
+const week = Math.min(12, Math.max(1, Math.floor((Date.now()-START)/(7*864e5))+1));
+const phase = week<=4 ? 1 : week<=8 ? 2 : 3;
+
+/* ---- stick-figure poses (verified 1:1 structure) ---- */
+const A = {};
+A.squat = [
+ {L:[[[120,49],[120,105]],[[120,105],[121,143],[120,182]],[[120,182],[135,182]],[[120,60],[133,68],[128,56]]],
+  C:[[120,40,9,0],[128,54,5,1]]},
+ {L:[[[131,94],[104,136]],[[104,136],[136,150],[120,182]],[[120,182],[135,182]],[[131,94],[143,108],[137,94]]],
+  C:[[138,84,9,0],[137,92,5,1]]}];
+A.rdl = [
+ {L:[[[120,49],[120,105]],[[120,105],[120,143],[120,182]],[[120,182],[135,182]],[[120,60],[122,85],[123,110]]],
+  C:[[120,40,9,0],[123,113,6,1]]},
+ {L:[[[150,84],[103,108]],[[103,108],[112,146],[120,182]],[[120,182],[135,182]],[[150,84],[150,108],[149,131]]],
+  C:[[158,76,9,0],[149,134,6,1]]}];
+A.legpress = [
+ {L:[[[70,120],[96,172]],[[78,132],[100,160]],[[100,160],[135,135],[160,112]],[[150,98],[172,120]],[[78,132],[88,152],[98,162]]],
+  C:[[70,122,9,0]]},
+ {L:[[[70,120],[96,172]],[[78,132],[100,160]],[[100,160],[118,138],[130,120]],[[120,106],[142,128]],[[78,132],[88,152],[98,162]]],
+  C:[[70,122,9,0]]}];
+A.calf = [
+ {L:[[[120,49],[120,105]],[[120,105],[120,143],[120,178]],[[120,178],[134,182]],[[120,60],[122,85],[123,108]]],
+  C:[[120,40,9,0],[123,111,4,1]]},
+ {L:[[[120,41],[120,97]],[[120,97],[120,135],[121,170]],[[121,170],[134,182]],[[120,52],[122,77],[123,100]]],
+  C:[[120,32,9,0],[123,103,4,1]]}];
+A.plank = [
+ {L:[[[80,148],[148,156],[186,176]],[[186,176],[192,182]],[[80,148],[78,180],[56,180]]],
+  C:[[70,140,8,0]]},
+ {L:[[[80,148],[148,152],[186,176]],[[186,176],[192,182]],[[80,148],[78,180],[56,180]]],
+  C:[[70,140,8,0]]}];
+A.deadbug = [
+ {L:[[[95,170],[135,170]],[[95,170],[95,150],[96,130]],[[95,170],[78,162],[62,156]],[[135,170],[145,150],[158,155]],[[135,170],[155,163],[175,158]]],
+  C:[[83,168,8,0]]},
+ {L:[[[95,170],[135,170]],[[95,170],[78,162],[62,156]],[[95,170],[95,150],[96,130]],[[135,170],[155,163],[175,158]],[[135,170],[145,150],[158,155]]],
+  C:[[83,168,8,0]]}];
+A.bench = [
+ {L:[[[75,162],[170,162]],[[85,162],[85,182]],[[160,162],[160,182]],[[95,152],[140,152]],[[140,152],[155,166],[158,182]],[[100,152],[90,158],[92,132]]],
+  C:[[85,150,8,0],[92,126,5,1]]},
+ {L:[[[75,162],[170,162]],[[85,162],[85,182]],[[160,162],[160,182]],[[95,152],[140,152]],[[140,152],[155,166],[158,182]],[[100,152],[100,128],[100,106]]],
+  C:[[85,150,8,0],[100,100,5,1]]}];
+A.cablerow = [
+ {L:[[[118,115],[120,160]],[[120,160],[150,150],[170,164]],[[172,154],[178,174]],[[118,115],[138,124],[158,130]],[[158,130],[186,128]]],
+  C:[[115,103,9,0],[158,130,3,1]]},
+ {L:[[[122,113],[120,160]],[[120,160],[150,150],[170,164]],[[172,154],[178,174]],[[122,113],[114,133],[130,140]],[[130,140],[186,128]]],
+  C:[[119,101,9,0],[130,140,3,1]]}];
+A.ohp = [
+ {L:[[[105,152],[126,152]],[[115,152],[115,182]],[[120,100],[120,150]],[[120,150],[138,153],[140,182]],[[120,100],[133,108],[135,88]]],
+  C:[[117,90,9,0],[135,83,5,1]]},
+ {L:[[[105,152],[126,152]],[[115,152],[115,182]],[[120,100],[120,150]],[[120,150],[138,153],[140,182]],[[120,100],[126,80],[128,60]]],
+  C:[[117,90,9,0],[128,54,5,1]]}];
+A.latpull = [
+ {L:[[[120,105],[122,152]],[[122,152],[140,155],[142,182]],[[120,105],[132,85],[140,62]],[[128,58],[155,61]],[[142,60],[148,28]]],
+  C:[[116,93,9,0]]},
+ {L:[[[116,104],[122,152]],[[122,152],[140,155],[142,182]],[[116,104],[133,122],[138,104]],[[126,100],[152,106]],[[140,103],[148,28]]],
+  C:[[111,92,9,0]]}];
+A.curl = [
+ {L:[[[120,49],[120,105]],[[120,105],[120,143],[120,182]],[[120,182],[134,182]],[[120,60],[124,86],[127,109]]],
+  C:[[120,40,9,0],[128,112,5,1]]},
+ {L:[[[120,49],[120,105]],[[120,105],[120,143],[120,182]],[[120,182],[134,182]],[[120,60],[124,86],[133,67]]],
+  C:[[120,40,9,0],[134,63,5,1]]}];
+A.pushdown = [
+ {L:[[[122,52],[118,105]],[[118,105],[119,143],[118,182]],[[118,182],[132,182]],[[122,62],[130,86],[138,64]],[[140,22],[138,62]]],
+  C:[[121,43,9,0],[138,63,3,1]]},
+ {L:[[[122,52],[118,105]],[[118,105],[119,143],[118,182]],[[118,182],[132,182]],[[122,62],[130,86],[141,106]],[[140,22],[141,106]]],
+  C:[[121,43,9,0],[141,107,3,1]]}];
+A.deadlift = [
+ {L:[[[138,90],[100,130]],[[100,130],[128,151],[120,182]],[[120,182],[135,182]],[[138,90],[140,120],[141,148]]],
+  C:[[147,82,9,0],[141,155,9,1]]},
+ {L:[[[120,49],[120,105]],[[120,105],[120,143],[120,182]],[[120,182],[135,182]],[[120,60],[121,85],[122,110]]],
+  C:[[120,40,9,0],[122,118,9,1]]}];
+A.incline = [
+ {L:[[[85,120],[120,170]],[[118,170],[118,182]],[[93,131],[117,164]],[[117,164],[135,170],[138,182]],[[93,131],[103,146],[109,131]]],
+  C:[[86,117,8,0],[111,127,5,1]]},
+ {L:[[[85,120],[120,170]],[[118,170],[118,182]],[[93,131],[117,164]],[[117,164],[135,170],[138,182]],[[93,131],[108,120],[124,109]]],
+  C:[[86,117,8,0],[126,105,5,1]]}];
+A.onearmrow = [
+ {L:[[[150,155],[190,155]],[[158,155],[158,182]],[[183,155],[183,182]],[[140,105],[100,120]],[[100,120],[105,150],[102,182]],[[140,105],[155,130],[164,152]],[[140,105],[138,130],[136,152]]],
+  C:[[150,97,9,0],[136,157,5,1]]},
+ {L:[[[150,155],[190,155]],[[158,155],[158,182]],[[183,155],[183,182]],[[140,105],[100,120]],[[100,120],[105,150],[102,182]],[[140,105],[155,130],[164,152]],[[140,105],[128,120],[136,131]]],
+  C:[[150,97,9,0],[136,136,5,1]]}];
+A.lunge = [
+ {L:[[[120,49],[120,105]],[[120,105],[120,143],[118,182]],[[120,105],[122,143],[124,182]],[[120,60],[122,85],[123,108]]],
+  C:[[120,40,9,0],[123,111,4,1]]},
+ {L:[[[120,75],[120,130]],[[120,130],[146,141],[146,182]],[[120,130],[100,155],[88,180]],[[120,86],[122,111],[123,134]]],
+  C:[[120,66,9,0],[123,137,4,1]]}];
+A.carry = [
+ {L:[[[120,49],[120,105]],[[120,105],[135,140],[140,182]],[[120,105],[105,142],[98,182]],[[120,60],[122,85],[123,110]],[[120,60],[119,86],[118,110]]],
+  C:[[120,40,9,0],[123,114,5,1],[118,114,5,1]]},
+ {L:[[[120,49],[120,105]],[[120,105],[105,142],[98,182]],[[120,105],[135,140],[140,182]],[[120,60],[119,86],[118,110]],[[120,60],[122,85],[123,110]]],
+  C:[[120,40,9,0],[118,114,5,1],[123,114,5,1]]}];
+A.kneeraise = [
+ {L:[[[100,25],[145,25]],[[118,68],[119,48],[120,27]],[[118,68],[122,115]],[[122,115],[124,148],[125,175]]],
+  C:[[110,60,9,0]]},
+ {L:[[[100,25],[145,25]],[[118,68],[119,48],[120,27]],[[118,68],[120,113]],[[120,113],[147,124],[150,150]]],
+  C:[[110,60,9,0]]}];
+
+/* ---- exercises ----
+   type: wr = weight×reps · r = reps only · t = seconds
+   start = suggested first-session load */
+const EX = {
+ squat:{n: week>=5?"Barbell Back Squat":"Goblet Squat", t:"3 × 8–12", a:A.squat, type:'wr',
+  yt: week>=5?"barbell back squat form":"goblet squat form",
+  start: week>=5?"20 kg (empty bar) — add from there":"12–16 kg dumbbell held at chest",
+  cues:["Sit down and slightly back, like onto a low stool","Chest up, knees track over your toes","Full depth you can control, heels flat"],
+  no:["Don't let knees cave inward","Don't let heels lift or rock onto toes","Don't round your lower back at the bottom"]},
+ rdl:{n:"Romanian Deadlift", t:"3 × 8–12", a:A.rdl, type:'wr', yt:"romanian deadlift form",
+  start:"2 × 12 kg dumbbells (or 30 kg bar)",
+  cues:["Push hips straight back, soft knees — a hinge, not a squat","Flat back; weight slides down your thighs","Stop at hamstring stretch, drive hips forward to stand"],
+  no:["Don't round or over-arch the back","Don't bend the knees more as you lower — that turns it into a squat","Don't jerk the weight up"]},
+ legpress:{n:"Leg Press", t:"3 × 10–15", a:A.legpress, type:'wr', yt:"leg press form",
+  start:"60–80 kg on the sled",
+  cues:["Feet mid-platform, shoulder width","Lower until knees near your chest","Push through the whole foot"],
+  no:["Don't let your lower back curl off the pad","Don't slam into knee lockout at the top"]},
+ calf:{n:"Standing Calf Raise", t:"3 × 12–15", a:A.calf, type:'wr', yt:"standing calf raise form",
+  start:"Bodyweight or 2 × 10 kg dumbbells",
+  cues:["Full stretch at the bottom, pause","Drive up onto toes, pause 1 s at top","Slow and controlled — key hiking muscle"],
+  no:["Don't bounce out of the bottom","Don't cut the range short"]},
+ plank:{n:"Plank", t:"3 × 30–60 s", a:A.plank, type:'t', yt:"plank form",
+  start:"30 s holds — add 5 s when all 3 sets feel solid",
+  cues:["Straight line from ear to ankle","Squeeze glutes and brace abs like taking a punch"],
+  no:["Don't let hips sag toward the floor","Don't pike your hips up to make it easier"]},
+ deadbug:{n:"Dead Bug", t:"3 × 10/side", a:A.deadbug, type:'r', yt:"dead bug exercise form",
+  start:"Bodyweight — slow beats many",
+  cues:["Lower back pressed into the floor at all times","Opposite arm and leg extend slowly; exhale as you reach"],
+  no:["Don't let your lower back arch off the floor","Don't rush — 2–3 s per rep"]},
+ bench:{n:"Flat DB Bench Press", t:"3 × 8–12", a:A.bench, type:'wr', yt:"dumbbell bench press form",
+  start:"2 × 12 kg dumbbells",
+  cues:["Squeeze shoulder blades back into the bench","Lower to chest level, elbows ~45° from body","Wrists stacked over elbows"],
+  no:["Don't flare elbows straight out at 90°","Don't bounce the weights off your chest","Don't lift feet off the floor"]},
+ cablerow:{n:"Seated Cable Row", t:"3 × 8–12", a:A.cablerow, type:'wr', yt:"seated cable row form",
+  start:"30–35 kg on the stack",
+  cues:["Sit tall; pull the handle to your lower ribs","Squeeze shoulder blades together at the end"],
+  no:["Don't swing your torso back and forth for momentum","Don't shrug shoulders up toward ears"]},
+ ohp:{n:"Seated DB Shoulder Press", t:"3 × 8–12", a:A.ohp, type:'wr', yt:"seated dumbbell shoulder press form",
+  start:"2 × 8 kg dumbbells",
+  cues:["Start at ear height, press up and slightly in","Ribs down, core braced","Lower with control to ear level"],
+  no:["Don't arch your lower back to grind out reps","Don't press forward — the weight goes straight up"]},
+ latpull:{n:"Lat Pulldown", t:"3 × 8–12", a:A.latpull, type:'wr', yt:"lat pulldown form",
+  start:"35–40 kg on the stack",
+  cues:["Grip slightly wider than shoulders","Drive elbows down toward your pockets","Bar to upper chest, chest proud"],
+  no:["Don't lean way back and heave","Don't pull the bar behind your neck"]},
+ curl:{n:"DB Biceps Curl", t:"2 × 10–15", a:A.curl, type:'wr', yt:"dumbbell bicep curl form",
+  start:"2 × 8 kg dumbbells",
+  cues:["Elbows pinned to your sides","Lower slowly — 2 s down"],
+  no:["Don't swing your hips or lean back","Don't drop the weight on the way down"]},
+ pushdown:{n:"Cable Triceps Pushdown", t:"2 × 10–15", a:A.pushdown, type:'wr', yt:"cable tricep pushdown form",
+  start:"15–20 kg on the stack",
+  cues:["Elbows locked at your sides","Push to full elbow extension, control the return"],
+  no:["Don't let elbows drift forward as you push","Don't lean your whole body onto the cable"]},
+ deadlift:{n: week>=5?"Deadlift (barbell)":"Trap-Bar / Light Deadlift", t: phase===3?"4 × 5–8":"3 × 5–8", a:A.deadlift, type:'wr',
+  yt:"deadlift form beginner",
+  start:"40 kg (bar + small plates) — form first, always",
+  cues:["Bar over mid-foot, shins close","Big breath, brace hard, flat back","Push the floor away; bar stays against your legs"],
+  no:["Don't round your lower back — ever","Don't jerk the bar off the floor","Don't lean back at the top"]},
+ incline:{n:"Incline DB Press", t:"3 × 8–12", a:A.incline, type:'wr', yt:"incline dumbbell press form",
+  start:"2 × 10 kg dumbbells",
+  cues:["Bench at 30–45°","Lower to upper-chest with control","Press up and slightly together"],
+  no:["Don't set the bench too steep — that's a shoulder press","Don't let wrists bend backward"]},
+ onearmrow:{n:"One-Arm DB Row", t:"3 × 8–12 /side", a:A.onearmrow, type:'wr', yt:"one arm dumbbell row form",
+  start:"14–16 kg dumbbell",
+  cues:["Hand and knee on bench, back flat like a table","Pull the dumbbell to your hip, not your shoulder"],
+  no:["Don't twist your torso to lift higher","Don't let the shoulder hang loose at the bottom"]},
+ lunge:{n:"Walking Lunge / Split Squat", t:"3 × 8–10 /leg", a:A.lunge, type:'wr', yt:"walking lunge form",
+  start:"Bodyweight first week, then 2 × 8 kg",
+  cues:["Long step; torso stays tall","Back knee dips low, front heel drives","The #1 hiking exercise"],
+  no:["Don't let the front knee dive inward","Don't take short choppy steps — knee shouldn't pass far beyond toes"]},
+ carry:{n:"Farmer's Carry", t:"3 × 30–40 m", a:A.carry, type:'wr', u2:'m', yt:"farmers carry form",
+  start:"2 × 16–20 kg dumbbells",
+  cues:["Stand tall — shoulders back, quick small steps","Grip hard; breathe"],
+  no:["Don't lean to either side","Don't let shoulders slump forward"]},
+ kneeraise:{n:"Hanging Knee Raise", t:"3 × 8–12", a:A.kneeraise, type:'r', yt:"hanging knee raise form",
+  start:"Bodyweight — bent knees; straighten legs as you get stronger",
+  cues:["Dead hang, shoulders engaged","Curl knees up past 90°, tilting pelvis up"],
+  no:["Don't swing or use momentum","Don't just lift knees without curling the pelvis"]},
+};
+const WO = {
+ A:{list:["squat","rdl","legpress","calf","plank","deadbug"]},
+ B:{list:["bench","cablerow","ohp","latpull","curl","pushdown"]},
+ C:{list:["deadlift","incline","onearmrow","lunge","carry","kneeraise"]},
+};
+
+/* ================= UI ================= */
+const $=q=>document.querySelector(q);
+const store={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},
+             set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+$("#hSub").textContent = `Week ${week} of 12 · Phase ${phase} — ${["Foundation","Build","Push"][phase-1]}`;
+$("#phaseNote").textContent = [
+ "Foundation: lighter weights, nail the form. Film your squat and deadlift sets or grab a trainer for a form check. Week 4 is a mini-deload (drop 1 set per exercise).",
+ "Build: move to the barbell versions and add weight whenever you top the rep range. Sunday cardio grows to 60–75 min. Week 8: deload — 2 sets per exercise at ~80%.",
+ "Push: first lift of each day goes heavier (4 × 5–8). Add a 5–8 kg backpack to one walk per week. Week 12: test your milestones, then celebrate with a real day-hike."][phase-1];
+$("#cardioLen").textContent = ["40–50 min","60–75 min","75–90 min"][phase-1];
+
+/* nav */
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); $("#tab-"+b.dataset.tab).classList.add("on");
+  if(b.dataset.tab!=="train") stopAllAnims();          // QA: no background animation
+  if(b.dataset.tab==="prog"){ drawBW(); renderHist(); }
+});
+
+/* today card */
+(function(){
+  const d=new Date().getDay();
+  const map={1:["🏋️ Gym — Workout A (Lower + Core)","7:00 am · ~60 min","train","A"],
+             3:["🏋️ Gym — Workout B (Upper Body)","7:00 am · ~60 min","train","B"],
+             5:["🏋️ Gym — Workout C (Full Body)","7:00 am · ~60 min","train","C"],
+             0:["🚴 Zone 2 cardio","10:00 am · "+["40–50","60–75","75–90"][phase-1]+" min · HR 116–136","cardio",null],
+             2:["🚶 Recovery walk","30–45 min, easy pace"+(phase===3?" — consider the 5–8 kg pack":""),null,null],
+             4:["🚶 Recovery walk","30–45 min, easy pace",null,null],
+             6:["😴 Rest day","Full recovery — sleep well, eat well",null,null]};
+  const [title,sub,tab,wo]=map[d];
+  $("#todayCard").innerHTML=`<div class="card" style="border-color:var(--acc-dim)">
+    <span class="chip">TODAY</span><h1 style="margin:8px 0 4px">${title}</h1>
+    <div class="mut">${sub}</div>
+    ${tab?`<button class="btn" style="margin-top:12px" onclick="goto('${tab}'${wo?`,'${wo}'`:''})">Open session →</button>`:""}
+  </div>`;
+})();
+function goto(tab,wo){ document.querySelector(`nav button[data-tab=${tab}]`).click(); if(wo) selectWO(wo); }
+
+/* workout rendering */
+document.querySelectorAll("#woSeg button").forEach(b=>b.onclick=()=>selectWO(b.dataset.wo));
+function selectWO(w){
+  document.querySelectorAll("#woSeg button").forEach(x=>x.classList.toggle("on",x.dataset.wo===w));
+  renderWO(w);
+}
+const running = new Map();          // canvas -> rafId
+function stopAllAnims(){ running.forEach(id=>cancelAnimationFrame(id)); running.clear(); }
+
+function fmtSet(ex,s){
+  if(ex.type==='t')  return `${s.r}s`;
+  if(ex.type==='r')  return `${s.r} reps`;
+  return `${s.w}${ex.u2==='m'?'kg×'+s.r+'m':'kg×'+s.r}`;
+}
+function renderWO(w){
+  stopAllAnims();
+  const el=$("#exList"); el.innerHTML="";
+  const today=new Date().toISOString().slice(0,10);
+  WO[w].list.forEach(key=>{
+    const ex=EX[key];
+    const log=store.get("log_"+key,[]);
+    const last=log.length?log[log.length-1]:null;
+    const todaySets=log.filter(s=>s.d===today);
+    const div=document.createElement("div"); div.className="ex";
+    // logger inputs by type
+    let inputs;
+    if(ex.type==='t')      inputs=`<input type="number" inputmode="numeric" placeholder="seconds">`;
+    else if(ex.type==='r') inputs=`<input type="number" inputmode="numeric" placeholder="reps">`;
+    else inputs=`<input type="number" inputmode="decimal" step="0.5" placeholder="kg" value="${last&&last.w?last.w:""}">
+                 <input type="number" inputmode="numeric" placeholder="${ex.u2==='m'?'metres':'reps'}">`;
+    div.innerHTML=`<div class="ex-head"><b>${ex.n}</b><span class="tgt">${ex.t}</span></div>
+      <div class="ex-body">
+        <canvas class="anim" width="480" height="400"></canvas>
+        <div class="startw">🏁 <b>Starting point:</b> ${ex.start}</div>
+        <ul class="cues">
+          ${ex.cues.map(c=>`<li class="do">${c}</li>`).join("")}
+          ${ex.no.map(c=>`<li class="no">${c}</li>`).join("")}
+        </ul>
+        <a class="yt" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(ex.yt)}">▶ Watch real video demo</a>
+        ${last?`<div class="last">Last time: ${fmtSet(ex,last)}</div>`:""}
+        <div class="logrow">${inputs}<button class="btn">Log set</button></div>
+        <div class="setdots">${todaySets.map(s=>`<span>${fmtSet(ex,s)}</span>`).join("")||"No sets logged today"}</div>
+      </div>`;
+    el.appendChild(div);
+    const head=div.querySelector(".ex-head"), cv=div.querySelector("canvas");
+    head.onclick=()=>{
+      const open=div.classList.toggle("open");
+      if(open) startAnim(cv,ex.a);
+      else if(running.has(cv)){ cancelAnimationFrame(running.get(cv)); running.delete(cv); }
+    };
+    const ins=div.querySelectorAll("input");
+    div.querySelector(".btn").onclick=()=>{
+      let rec;
+      if(ex.type==='wr'){
+        const wgt=parseFloat(ins[0].value), n=parseInt(ins[1].value);
+        if(isNaN(wgt)||!n){ ins[1].placeholder="?"; return; }
+        rec={d:today,w:wgt,r:n}; ins[1].value="";
+      } else {
+        const n=parseInt(ins[0].value);
+        if(!n){ ins[0].placeholder="?"; return; }
+        rec={d:today,w:0,r:n}; ins[0].value="";
+      }
+      const l=store.get("log_"+key,[]); l.push(rec); store.set("log_"+key,l);
+      div.querySelector(".setdots").innerHTML=l.filter(s=>s.d===today).map(s=>`<span>${fmtSet(ex,s)}</span>`).join("");
+      if(navigator.vibrate) navigator.vibrate(30);
+    };
+  });
+}
+
+/* animation engine */
+function lerp(a,b,t){ return a+(b-a)*t }
+function ease(t){ return .5-.5*Math.cos(Math.PI*t) }
+function startAnim(cv,poses){
+  const ctx=cv.getContext("2d");
+  const [p1,p2]=poses, DUR=1600;
+  function frame(ts){
+    const cyc=(ts%(DUR*2))/DUR;
+    const t=ease(cyc<1?cyc:2-cyc);
+    ctx.clearRect(0,0,480,400); ctx.save(); ctx.scale(2,2);
+    ctx.strokeStyle="#3a4a44"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(20,182); ctx.lineTo(220,182); ctx.stroke();
+    ctx.strokeStyle="#e8efec"; ctx.lineWidth=3.5; ctx.lineCap="round"; ctx.lineJoin="round";
+    p1.L.forEach((poly,i)=>{
+      ctx.beginPath();
+      poly.forEach((pt,j)=>{
+        const x=lerp(pt[0],p2.L[i][j][0],t), y=lerp(pt[1],p2.L[i][j][1],t);
+        j?ctx.lineTo(x,y):ctx.moveTo(x,y);
+      });
+      ctx.stroke();
+    });
+    p1.C.forEach((c,i)=>{
+      const x=lerp(c[0],p2.C[i][0],t), y=lerp(c[1],p2.C[i][1],t);
+      ctx.beginPath(); ctx.arc(x,y,c[2],0,7);
+      if(c[3]){ ctx.fillStyle="#3ddc97"; ctx.fill(); }
+      else { ctx.lineWidth=3; ctx.stroke(); ctx.lineWidth=3.5; }
+    });
+    ctx.restore();
+    running.set(cv,requestAnimationFrame(frame));
+  }
+  running.set(cv,requestAnimationFrame(frame));
+}
+
+/* rest timer — first tap 3:00 (big lifts), next 1:30, alternating */
+let tEnd=null, tInt=null, tMode=90;
+function timerTap(){
+  const btn=$("#timerBtn");
+  if(tEnd){ clearInterval(tInt); tEnd=null; btn.classList.remove("run"); btn.textContent="⏱ Rest"; return; }
+  tMode = tMode===90?180:90;
+  tEnd=Date.now()+tMode*1000; btn.classList.add("run");
+  btn.textContent="⏱ "+Math.floor(tMode/60)+":"+String(tMode%60).padStart(2,"0");
+  tInt=setInterval(()=>{
+    const s=Math.max(0,Math.round((tEnd-Date.now())/1000));
+    btn.textContent="⏱ "+Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+    if(s<=0){ clearInterval(tInt); tEnd=null; btn.classList.remove("run");
+      btn.textContent="⏱ Rest"; if(navigator.vibrate) navigator.vibrate([200,100,200]); }
+  },250);
+}
+
+/* progress */
+function logBW(){
+  const v=parseFloat($("#bwIn").value); if(!v||v<30||v>200) return;
+  const bw=store.get("bw",[]); bw.push({d:new Date().toISOString().slice(0,10),kg:v});
+  store.set("bw",bw); $("#bwIn").value=""; drawBW();
+}
+function drawBW(){
+  const bw=store.get("bw",[]);
+  $("#bwLast").textContent=bw.length?("last: "+bw[bw.length-1].kg+" kg"):"start: 65 kg";
+  const cv=$("#bwChart"),ctx=cv.getContext("2d");
+  ctx.clearRect(0,0,640,160);
+  if(bw.length<2){ ctx.fillStyle="#93a49d"; ctx.font="20px sans-serif";
+    ctx.fillText("Log a few weigh-ins to see your trend",120,90); return; }
+  const kgs=bw.map(p=>p.kg), min=Math.min(...kgs)-.5, max=Math.max(...kgs)+.5;
+  ctx.strokeStyle="#3ddc97"; ctx.lineWidth=3; ctx.beginPath();
+  bw.forEach((p,i)=>{ const x=30+(i/(bw.length-1))*580, y=140-((p.kg-min)/(max-min))*120;
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+  ctx.stroke();
+  ctx.fillStyle="#93a49d"; ctx.font="16px sans-serif";
+  ctx.fillText(max.toFixed(1),2,24); ctx.fillText(min.toFixed(1),2,148);
+}
+function renderHist(){
+  let html="";
+  Object.keys(EX).forEach(k=>{
+    const ex=EX[k], log=store.get("log_"+k,[]); if(!log.length) return;
+    const byDay={}; log.forEach(s=>{ const c=byDay[s.d];
+      if(!c || s.w>c.w || (s.w===c.w && s.r>c.r)) byDay[s.d]=s; });
+    const days=Object.keys(byDay).sort().slice(-4);
+    html+=`<div style="margin-bottom:8px"><b style="color:var(--txt)">${ex.n}</b><br>`+
+      days.map(d=>`${d.slice(5)}: <b style="color:var(--acc)">${fmtSet(ex,byDay[d])}</b>`).join(" · ")+"</div>";
+  });
+  $("#liftHist").innerHTML=html||"Log sets in the Train tab and your best set per session shows here.";
+}
+
+/* ================= GARMIN IMPORT ================= */
+const FIT_EPOCH = 631065600; // 1989-12-31 UTC, seconds
+/* map workout step index -> exercise key, mirroring the generated .fit workouts:
+   step 0 = warm-up, then each exercise occupies (sets*2) steps (work+rest pairs) */
+const STEPMAP = (()=>{
+  const layout={ "A":[["squat",3],["rdl",3],["legpress",3],["calf",3],["plank",3],["deadbug",3]],
+                 "B":[["bench",3],["cablerow",3],["ohp",3],["latpull",3],["curl",2],["pushdown",2]],
+                 "C":[["deadlift",3],["incline",3],["onearmrow",3],["lunge",3],["carry",3],["kneeraise",3]] };
+  const m={};
+  for(const w in layout){ m[w]={}; let i=1;
+    for(const [key,sets] of layout[w]) for(let s=0;s<sets;s++){ m[w][i]=key; i+=2; } }
+  return m;
+})();
+const SPORTNAME={1:"Run",2:"Bike",10:"Strength",11:"Walk",17:"Hike",4:"Gym cardio"};
+
+function parseFit(buf){
+  const dv=new DataView(buf);
+  const hsz=dv.getUint8(0);
+  if(String.fromCharCode(dv.getUint8(8),dv.getUint8(9),dv.getUint8(10),dv.getUint8(11))!==".FIT")
+    throw new Error("Not a FIT file");
+  const dataEnd=hsz+dv.getUint32(4,true);
+  let p=hsz; const defs={};
+  const out={wname:null,sets:[],sessions:[]};
+  const SZ={0:1,1:1,2:1,7:1,10:1,13:1,131:2,132:2,139:2,133:4,134:4,140:4,136:4,135:1,142:8,143:8,144:8,137:4,138:8};
+  function val(off,sz,bt,le){
+    switch(bt){
+      case 0x00: case 0x02: case 0x0A: case 0x01: return dv.getUint8(off);
+      case 0x84: case 0x8B: case 0x83: return le?dv.getUint16(off,true):dv.getUint16(off,false);
+      case 0x86: case 0x8C: case 0x85: return le?dv.getUint32(off,true):dv.getUint32(off,false);
+      case 0x07:{ let s="";for(let i=0;i<sz;i++){const c=dv.getUint8(off+i);if(!c)break;s+=String.fromCharCode(c);}return s;}
+      default: return null; // skip floats/64-bit; we don't need them
+    }
+  }
+  while(p<dataEnd){
+    const h=dv.getUint8(p++);
+    if(h&0x80){ // compressed timestamp data msg
+      const d=defs[(h>>5)&0x3]; if(!d) break;
+      p+=d.size; continue;
+    }
+    if(h&0x40){ // definition
+      p++; const le=dv.getUint8(p++)===0;
+      const g=le?dv.getUint16(p,true):dv.getUint16(p,false); p+=2;
+      const n=dv.getUint8(p++); const fs=[]; let size=0;
+      for(let i=0;i<n;i++){ const f=[dv.getUint8(p),dv.getUint8(p+1),dv.getUint8(p+2)];
+        fs.push(f); size+=f[1]; p+=3; }
+      let dev=0;
+      if(h&0x20){ const dn=dv.getUint8(p++);
+        for(let i=0;i<dn;i++){ dev+=dv.getUint8(p+1); p+=3; } }
+      defs[h&0xF]={g,fs,le,dev,size:size+dev};
+      continue;
+    }
+    const d=defs[h&0xF]; if(!d) break;
+    if(d.g===26||d.g===225||d.g===18){
+      const rec={}; let q=p;
+      for(const [fn,sz,bt] of d.fs){ rec[fn]=val(q,sz,bt,d.le); q+=sz; }
+      if(d.g===26 && rec[8]) out.wname=rec[8];
+      if(d.g===225) out.sets.push(rec);
+      if(d.g===18) out.sessions.push(rec);
+    }
+    p+=d.size;
+  }
+  return out;
+}
+function fitDate(ts){ return new Date((ts+FIT_EPOCH)*1000).toISOString().slice(0,10); }
+
+function importFitBuffer(buf){
+  const r=parseFit(buf);
+  let liftN=0, actN=0;
+  // strength sets
+  const wLetter = r.wname ? (r.wname.trim()[0]||"").toUpperCase() : null;
+  const map = STEPMAP[wLetter];
+  const act = r.sets.filter(s=>s[5]===1); // set_type active
+  if(map && act.length){
+    const byKey={};
+    act.forEach(s=>{
+      const key=map[s[11]]; if(!key||!EX[key]) return;
+      const d=fitDate(s[6]??s[254]??0);
+      const w=(s[4]!=null && s[4]!==0xFFFF)?Math.round(s[4]/16*10)/10:0;
+      const reps=(s[3]!=null && s[3]!==0xFFFF)?s[3]:0;
+      if(!reps && !w) return;
+      (byKey[key]=byKey[key]||[]).push({d,w,r:reps||0,g:1});
+    });
+    for(const key in byKey){
+      const dates=[...new Set(byKey[key].map(s=>s.d))];
+      let l=store.get("log_"+key,[]);
+      l=l.filter(s=>!(s.g && dates.includes(s.d)));      // idempotent re-import
+      l.push(...byKey[key]); l.sort((a,b)=>a.d<b.d?-1:1);
+      store.set("log_"+key,l); liftN+=byKey[key].length;
+    }
+  }
+  // sessions -> activity log
+  r.sessions.forEach(s=>{
+    const sport=s[5], secs=(s[7]!=null&&s[7]!==0xFFFFFFFF)?s[7]/1000:0;
+    if(!secs) return;
+    const entry={d:fitDate(s[253]??s[2]??0), sport:SPORTNAME[sport]||("Sport "+sport),
+      min:Math.round(secs/60), dist:(s[9]!=null&&s[9]!==0xFFFFFFFF)?Math.round(s[9]/100/100)/10:null,
+      hr:(s[16]!=null&&s[16]!==0xFF)?s[16]:null};
+    const acts=store.get("act",[]);
+    if(!acts.some(a=>a.d===entry.d&&a.min===entry.min&&a.sport===entry.sport)){
+      acts.push(entry); acts.sort((a,b)=>a.d<b.d?-1:1); store.set("act",acts); actN++;
+    }
+  });
+  return {liftN,actN,wname:r.wname};
+}
+
+function importCsvText(txt){
+  const lines=txt.split(/\r?\n/).filter(x=>x.trim());
+  if(!lines.length) return 0;
+  // simple CSV split honouring quotes
+  const split=l=>{const o=[];let cur="",q=false;
+    for(const ch of l){ if(ch==='"')q=!q; else if(ch===','&&!q){o.push(cur);cur="";} else cur+=ch; }
+    o.push(cur); return o.map(x=>x.trim());};
+  const head=split(lines[0]).map(h=>h.toLowerCase());
+  const col=n=>head.findIndex(h=>h.includes(n));
+  const iType=col("activity type"), iDate=col("date"), iTime=col("time"),
+        iHR=col("avg hr"), iDist=col("distance");
+  if(iType<0||iDate<0) return 0;
+  let n=0; const acts=store.get("act",[]);
+  for(let i=1;i<lines.length;i++){
+    const c=split(lines[i]); if(c.length<3) continue;
+    const t=(c[iTime]||"").split(":").map(Number);
+    const min=t.length===3?t[0]*60+t[1]:(t.length===2?t[0]:0);
+    const entry={d:(c[iDate]||"").slice(0,10), sport:c[iType]||"Activity",
+      min:min||0, dist:iDist>=0?parseFloat(c[iDist])||null:null,
+      hr:iHR>=0?parseInt(c[iHR])||null:null};
+    if(!entry.d) continue;
+    if(!acts.some(a=>a.d===entry.d&&a.min===entry.min&&a.sport===entry.sport)){ acts.push(entry); n++; }
+  }
+  acts.sort((a,b)=>a.d<b.d?-1:1); store.set("act",acts);
+  return n;
+}
+
+function renderActs(){
+  const acts=store.get("act",[]);
+  const el=$("#actLog");
+  if(!acts.length){ el.textContent="No activities imported yet."; $("#wkSummary").textContent=""; return; }
+  // this week's cardio minutes (Mon-Sun)
+  const now=new Date(); const day=(now.getDay()+6)%7;
+  const mon=new Date(now); mon.setDate(now.getDate()-day); const monS=mon.toISOString().slice(0,10);
+  const wkCardio=acts.filter(a=>a.d>=monS&&a.sport!=="Strength").reduce((s,a)=>s+a.min,0);
+  const wkStr=acts.filter(a=>a.d>=monS&&a.sport==="Strength").length;
+  $("#wkSummary").innerHTML=`This week: <b style="color:var(--acc)">${wkCardio} min cardio</b> · <b style="color:var(--acc)">${wkStr} strength session${wkStr===1?"":"s"}</b>`;
+  el.innerHTML=acts.slice(-14).reverse().map(a=>
+    `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line)">
+     <span>${a.d.slice(5)} · <b style="color:var(--txt)">${a.sport}</b></span>
+     <span>${a.min} min${a.dist?` · ${a.dist} km`:""}${a.hr?` · <b style="color:var(--acc)">${a.hr} bpm</b>`:""}</span></div>`).join("");
+}
+
+$("#fitIn").addEventListener("change",async e=>{
+  let lift=0,act=0,names=[],errs=0;
+  for(const f of e.target.files){
+    try{ const r=importFitBuffer(await f.arrayBuffer());
+      lift+=r.liftN; act+=r.actN; if(r.wname)names.push(r.wname);
+    }catch(err){ errs++; }
+  }
+  $("#syncMsg").innerHTML=`Imported <b style="color:var(--acc)">${lift} sets</b> and
+    <b style="color:var(--acc)">${act} activities</b>${names.length?` (${names.join(", ")})`:""}${errs?` · <b style="color:var(--bad)">${errs} file(s) unreadable</b>`:""}`;
+  e.target.value=""; renderActs(); renderHist();
+});
+$("#csvIn").addEventListener("change",async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const n=importCsvText(await f.text());
+  $("#syncMsg").innerHTML=`Imported <b style="color:var(--acc)">${n} activities</b> from CSV`;
+  e.target.value=""; renderActs();
+});
+const _renderHistOrig=renderHist;
+renderHist=function(){ _renderHistOrig(); renderActs(); };
+
+selectWO("A");
+if("serviceWorker" in navigator && location.protocol==="https:")
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
