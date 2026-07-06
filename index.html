@@ -66,7 +66,10 @@ a.yt{display:inline-block;color:var(--acc);font-size:.83rem;font-weight:600;text
   border-radius:9px;padding:9px;font:inherit;text-align:center}
 .setdots{margin-top:8px;font-size:.8rem;color:var(--mut)}
 .setdots span{display:inline-block;background:var(--acc-dim);color:#fff;border-radius:7px;
-  padding:3px 8px;margin:2px 4px 2px 0;font-weight:600}
+  padding:3px 8px;margin:2px 4px 2px 0;font-weight:600;cursor:pointer}
+.setdots span.on{background:var(--warn);color:#161616}
+.hx,.ax{color:var(--bad);cursor:pointer;padding:0 6px;font-weight:700}
+.btn2{background:var(--card2);color:var(--txt);border:1px solid var(--line);padding:9px 14px}
 .last{color:var(--warn);font-size:.78rem;margin-top:6px}
 table{width:100%;border-collapse:collapse;font-size:.83rem}
 td,th{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
@@ -263,8 +266,9 @@ details .inner{padding:0 14px 14px}
       <span class="mut small" id="bwLast"></span>
     </div>
     <canvas id="bwChart" width="640" height="160" style="width:100%;margin-top:10px"></canvas>
+    <div id="bwList" class="mut small" style="margin-top:6px"></div>
     <p class="mut small">Weigh 2–3×/week, same time of day. Watch the weekly average, not single days.
-    Target: +0.25–0.5 kg/month.</p>
+    Target: +0.25–0.5 kg/month. Tap ✕ to remove a wrong entry.</p>
   </div>
   <div class="card">
     <b>⌚ Garmin sync</b>
@@ -589,8 +593,9 @@ function renderWO(w){
         </ul>
         <a class="yt" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(ex.yt)}">▶ Watch real video demo</a>
         ${last?`<div class="last">Last time: ${fmtSet(ex,last)}</div>`:""}
-        <div class="logrow">${inputs}<button class="btn">Log set</button></div>
-        <div class="setdots">${todaySets.map(s=>`<span>${fmtSet(ex,s)}</span>`).join("")||"No sets logged today"}</div>
+        <div class="logrow">${inputs}<button class="btn logbtn">Log set</button><button class="btn2 delbtn" style="display:none;color:var(--bad)">Delete</button><button class="btn2 cxbtn" style="display:none">Cancel</button></div>
+        <div class="setdots"></div>
+        <div class="mut" style="font-size:.72rem;margin-top:4px">Tap a logged set to edit or delete it</div>
       </div>`;
     el.appendChild(div);
     const head=div.querySelector(".ex-head"), cv=div.querySelector("canvas");
@@ -599,21 +604,56 @@ function renderWO(w){
       if(open) startAnim(cv,ex.a);
       else if(running.has(cv)){ cancelAnimationFrame(running.get(cv)); running.delete(cv); }
     };
-    const ins=div.querySelectorAll("input");
-    div.querySelector(".btn").onclick=()=>{
-      let rec;
+    const ins=div.querySelectorAll(".logrow input");
+    const logB=div.querySelector(".logbtn"), delB=div.querySelector(".delbtn"),
+          cxB=div.querySelector(".cxbtn"), dots=div.querySelector(".setdots");
+    let editIdx=null;
+    function chips(){
+      const l=store.get("log_"+key,[]);
+      const items=l.map((s,i)=>[s,i]).filter(x=>x[0].d===today);
+      dots.innerHTML=items.length
+        ? items.map(([s,i])=>`<span data-i="${i}"${i===editIdx?' class="on"':''}>${fmtSet(ex,s)}</span>`).join("")
+        : "No sets logged today";
+    }
+    function reset(){
+      editIdx=null; logB.textContent="Log set";
+      delB.style.display="none"; cxB.style.display="none";
+      ins.forEach(x=>x.value="");
+      if(ex.type==='wr'){ const l=store.get("log_"+key,[]);
+        if(l.length&&l[l.length-1].w) ins[0].value=l[l.length-1].w; }
+      chips();
+    }
+    chips();
+    dots.onclick=e=>{
+      const sp=e.target.closest("span[data-i]"); if(!sp) return;
+      const l=store.get("log_"+key,[]); const i=+sp.dataset.i; const s=l[i]; if(!s) return;
+      editIdx=i;
+      if(ex.type==='wr'){ ins[0].value=s.w; ins[1].value=s.r; } else ins[0].value=s.r;
+      logB.textContent="Update"; delB.style.display=""; cxB.style.display="";
+      chips();
+    };
+    cxB.onclick=reset;
+    delB.onclick=()=>{
+      if(editIdx===null) return;
+      const l=store.get("log_"+key,[]); l.splice(editIdx,1); store.set("log_"+key,l);
+      reset(); if(navigator.vibrate) navigator.vibrate(20);
+    };
+    logB.onclick=()=>{
+      let vals;
       if(ex.type==='wr'){
         const wgt=parseFloat(ins[0].value), n=parseInt(ins[1].value);
         if(isNaN(wgt)||!n){ ins[1].placeholder="?"; return; }
-        rec={d:today,w:wgt,r:n}; ins[1].value="";
+        vals={w:wgt,r:n};
       } else {
         const n=parseInt(ins[0].value);
         if(!n){ ins[0].placeholder="?"; return; }
-        rec={d:today,w:0,r:n}; ins[0].value="";
+        vals={w:0,r:n};
       }
-      const l=store.get("log_"+key,[]); l.push(rec); store.set("log_"+key,l);
-      div.querySelector(".setdots").innerHTML=l.filter(s=>s.d===today).map(s=>`<span>${fmtSet(ex,s)}</span>`).join("");
-      if(navigator.vibrate) navigator.vibrate(30);
+      const l=store.get("log_"+key,[]);
+      if(editIdx!==null && l[editIdx]) Object.assign(l[editIdx],vals);
+      else l.push({d:today,...vals});
+      store.set("log_"+key,l);
+      reset(); if(navigator.vibrate) navigator.vibrate(30);
     };
   });
 }
@@ -676,6 +716,7 @@ function logBW(){
 function drawBW(){
   const bw=store.get("bw",[]);
   $("#bwLast").textContent=bw.length?("last: "+bw[bw.length-1].kg+" kg"):"start: 65 kg";
+  renderBWList();
   const cv=$("#bwChart"),ctx=cv.getContext("2d");
   ctx.clearRect(0,0,640,160);
   if(bw.length<2){ ctx.fillStyle="#93a49d"; ctx.font="20px sans-serif";
@@ -688,6 +729,19 @@ function drawBW(){
   ctx.fillStyle="#93a49d"; ctx.font="16px sans-serif";
   ctx.fillText(max.toFixed(1),2,24); ctx.fillText(min.toFixed(1),2,148);
 }
+function renderBWList(){
+  const bw=store.get("bw",[]);
+  $("#bwList").innerHTML=bw.slice(-6).map((p,j)=>{
+    const i=bw.length-Math.min(6,bw.length)+j;
+    return `<span style="display:inline-block;margin:2px 8px 2px 0">${p.d.slice(5)}: <b style="color:var(--txt)">${p.kg} kg</b><span class="ax" data-i="${i}">✕</span></span>`;
+  }).join("");
+}
+$("#bwList").addEventListener("click",e=>{
+  const x=e.target.closest(".ax"); if(!x) return;
+  const bw=store.get("bw",[]); const p=bw[+x.dataset.i]; if(!p) return;
+  if(!confirm(`Remove weigh-in ${p.kg} kg on ${p.d}?`)) return;
+  bw.splice(+x.dataset.i,1); store.set("bw",bw); drawBW();
+});
 function renderHist(){
   let html="";
   Object.keys(EX).forEach(k=>{
@@ -696,10 +750,17 @@ function renderHist(){
       if(!c || s.w>c.w || (s.w===c.w && s.r>c.r)) byDay[s.d]=s; });
     const days=Object.keys(byDay).sort().slice(-4);
     html+=`<div style="margin-bottom:8px"><b style="color:var(--txt)">${ex.n}</b><br>`+
-      days.map(d=>`${d.slice(5)}: <b style="color:var(--acc)">${fmtSet(ex,byDay[d])}</b>`).join(" · ")+"</div>";
+      days.map(d=>`${d.slice(5)}: <b style="color:var(--acc)">${fmtSet(ex,byDay[d])}</b><span class="hx" data-k="${k}" data-d="${d}">✕</span>`).join(" · ")+"</div>";
   });
   $("#liftHist").innerHTML=html||"Log sets in the Train tab and your best set per session shows here.";
 }
+$("#liftHist").addEventListener("click",e=>{
+  const x=e.target.closest(".hx"); if(!x) return;
+  const k=x.dataset.k, d=x.dataset.d;
+  if(!confirm(`Delete ALL ${EX[k].n} sets logged on ${d}?`)) return;
+  const l=store.get("log_"+k,[]).filter(s=>s.d!==d);
+  store.set("log_"+k,l); renderHist();
+});
 
 /* ================= GARMIN IMPORT ================= */
 const FIT_EPOCH = 631065600; // 1989-12-31 UTC, seconds
@@ -843,11 +904,20 @@ function renderActs(){
   const wkCardio=acts.filter(a=>a.d>=monS&&a.sport!=="Strength").reduce((s,a)=>s+a.min,0);
   const wkStr=acts.filter(a=>a.d>=monS&&a.sport==="Strength").length;
   $("#wkSummary").innerHTML=`This week: <b style="color:var(--acc)">${wkCardio} min cardio</b> · <b style="color:var(--acc)">${wkStr} strength session${wkStr===1?"":"s"}</b>`;
-  el.innerHTML=acts.slice(-14).reverse().map(a=>
-    `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line)">
+  const n=acts.length;
+  el.innerHTML=acts.slice(-14).reverse().map((a,j)=>{
+    const i=n-1-j;
+    return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line)">
      <span>${a.d.slice(5)} · <b style="color:var(--txt)">${a.sport}</b></span>
-     <span>${a.min} min${a.dist?` · ${a.dist} km`:""}${a.hr?` · <b style="color:var(--acc)">${a.hr} bpm</b>`:""}</span></div>`).join("");
+     <span>${a.min} min${a.dist?` · ${a.dist} km`:""}${a.hr?` · <b style="color:var(--acc)">${a.hr} bpm</b>`:""}<span class="ax" data-i="${i}">✕</span></span></div>`;
+  }).join("");
 }
+$("#actLog").addEventListener("click",e=>{
+  const x=e.target.closest(".ax"); if(!x) return;
+  const acts=store.get("act",[]); const a=acts[+x.dataset.i]; if(!a) return;
+  if(!confirm(`Remove ${a.sport} on ${a.d} (${a.min} min)?`)) return;
+  acts.splice(+x.dataset.i,1); store.set("act",acts); renderActs();
+});
 
 $("#fitIn").addEventListener("change",async e=>{
   let lift=0,act=0,names=[],errs=0;
