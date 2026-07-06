@@ -1,2 +1,2 @@
 # fit
-Fitness plan web-app
+Fitness plan web-app (Mitch Fit)
