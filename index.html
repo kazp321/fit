@@ -137,7 +137,7 @@ details .inner{padding:0 14px 14px}
 <!-- CARDIO -->
 <div class="tab" id="tab-cardio">
   <div class="card">
-    <b>Sunday session — <span id="cardioLen"></span></b>
+    <b>Weekly Zone 2 session — <span id="cardioLen"></span></b>
     <p class="mut">Bike, brisk hike, or jog. Wear the chest strap. Stay conversational — if you
     can't speak full sentences, ease off. Load the <b>Zone 2</b> workout on your watch and it
     will guide you (Training → Workouts).</p>
@@ -330,9 +330,15 @@ details .inner{padding:0 14px 14px}
 </nav>
 
 <script>
-/* ================= PROGRAM ================= */
-const START = new Date(2026,6,6);
-const week = Math.min(12, Math.max(1, Math.floor((Date.now()-START)/(7*864e5))+1));
+/* ================= PROGRAM =================
+   Session-based, not date-based: the program is a repeating cycle A→B→C→Zone2.
+   Week/phase advance as sessions are completed, so missed days shift everything
+   instead of skipping it. */
+const $=q=>document.querySelector(q);
+const store={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},
+             set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const _gymDone=store.get("seq",[]).filter(s=>"ABC".includes(s.t)).length;
+const week = Math.min(12, Math.floor(_gymDone/3)+1);
 const phase = week<=4 ? 1 : week<=8 ? 2 : 3;
 
 /* ---- stick-figure poses (verified 1:1 structure) ---- */
@@ -514,10 +520,6 @@ const WO = {
 };
 
 /* ================= UI ================= */
-const $=q=>document.querySelector(q);
-const store={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},
-             set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-
 $("#hSub").textContent = `Week ${week} of 12 · Phase ${phase} — ${["Foundation","Build","Push"][phase-1]}`;
 $("#phaseNote").textContent = [
  "Foundation: lighter weights, nail the form. Film your squat and deadlift sets or grab a trainer for a form check. Week 4 is a mini-deload (drop 1 set per exercise).",
@@ -534,23 +536,42 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   if(b.dataset.tab==="prog"){ drawBW(); renderHist(); }
 });
 
-/* today card */
-(function(){
-  const d=new Date().getDay();
-  const map={1:["🏋️ Gym — Workout A (Lower + Core)","7:00 am · ~60 min","train","A"],
-             3:["🏋️ Gym — Workout B (Upper Body)","7:00 am · ~60 min","train","B"],
-             5:["🏋️ Gym — Workout C (Full Body)","7:00 am · ~60 min","train","C"],
-             0:["🚴 Zone 2 cardio","10:00 am · "+["40–50","60–75","75–90"][phase-1]+" min · HR 116–136","cardio",null],
-             2:["🚶 Recovery walk","30–45 min, easy pace"+(phase===3?" — consider the 5–8 kg pack":""),null,null],
-             4:["🚶 Recovery walk","30–45 min, easy pace",null,null],
-             6:["😴 Rest day","Full recovery — sleep well, eat well",null,null]};
-  const [title,sub,tab,wo]=map[d];
+/* today card — sequence cycle A→B→C→Z, advances only when marked done */
+const CYCLE=["A","B","C","Z"];
+const SNAME={A:"🏋️ Workout A (Lower + Core)",B:"🏋️ Workout B (Upper Body)",
+             C:"🏋️ Workout C (Full Body)",Z:"🚴 Zone 2 cardio"};
+function nextT(){ return CYCLE[store.get("seq",[]).length%4]; }
+function renderToday(){
+  const seq=store.get("seq",[]), t=nextT();
+  const gym=seq.filter(s=>"ABC".includes(s.t)).length;
+  const wk=Math.min(12,Math.floor(gym/3)+1), ph=wk<=4?1:wk<=8?2:3;
+  const hint={2:"Also scheduled today: 🚶 recovery walk",4:"Also scheduled today: 🚶 recovery walk"}[new Date().getDay()]||"";
+  const sub=t==="Z"?["40–50","60–75","75–90"][ph-1]+" min · HR 116–136 · wear the chest strap"
+                   :"~60 min · warm up first";
   $("#todayCard").innerHTML=`<div class="card" style="border-color:var(--acc-dim)">
-    <span class="chip">TODAY</span><h1 style="margin:8px 0 4px">${title}</h1>
+    <span class="chip">NEXT UP</span><h1 style="margin:8px 0 4px">${SNAME[t]}</h1>
     <div class="mut">${sub}</div>
-    ${tab?`<button class="btn" style="margin-top:12px" onclick="goto('${tab}'${wo?`,'${wo}'`:''})">Open session →</button>`:""}
+    ${hint?`<div class="mut small" style="margin-top:4px">${hint}</div>`:""}
+    <div class="logrow" style="margin-top:12px">
+      <button class="btn" onclick="goto('${t==="Z"?"cardio":"train"}'${t==="Z"?"":`,'${t}'`})">Open session →</button>
+      <button class="btn2" onclick="markDone()">✓ Mark done</button>
+    </div>
+    <div class="mut small" style="margin-top:8px">${seq.length} of 48 sessions done.
+    Missed a day? Nothing is skipped — this stays your next session until you do it.
+    Calendar events are just reminders; drag them freely.${seq.length?` <span class="hx" onclick="undoDone()">undo last ✕</span>`:""}</div>
   </div>`;
-})();
+  $("#hSub").textContent=`Week ${wk} of 12 · Phase ${ph} — ${["Foundation","Build","Push"][ph-1]} · ${seq.length}/48 sessions`;
+}
+function markDone(){
+  const seq=store.get("seq",[]);
+  seq.push({t:nextT(),d:new Date().toISOString().slice(0,10)});
+  store.set("seq",seq); renderToday();
+  if(navigator.vibrate) navigator.vibrate(30);
+}
+function undoDone(){
+  const seq=store.get("seq",[]); seq.pop(); store.set("seq",seq); renderToday();
+}
+renderToday();
 function goto(tab,wo){ document.querySelector(`nav button[data-tab=${tab}]`).click(); if(wo) selectWO(wo); }
 
 /* workout rendering */
@@ -939,7 +960,7 @@ $("#csvIn").addEventListener("change",async e=>{
 const _renderHistOrig=renderHist;
 renderHist=function(){ _renderHistOrig(); renderActs(); };
 
-selectWO("A");
+selectWO("ABC".includes(nextT())?nextT():"A");
 if("serviceWorker" in navigator && location.protocol==="https:")
   navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
